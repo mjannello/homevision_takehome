@@ -2,11 +2,14 @@ package main
 
 import (
 	"github.com/cenkalti/backoff/v4"
-	"homevision/web"
+	http2 "homevision/pkg/http"
+	"homevision/pkg/web"
 	"net/http"
 	"time"
 )
 
+// TODO: Create a webProcessor interface that has the  FetchHousesInfo and ProcessHouseImages methods to make the main
+// testable
 func main() {
 
 	backoffStrategy := backoff.NewExponentialBackOff()
@@ -14,12 +17,12 @@ func main() {
 	backoffStrategy.MaxInterval = 5 * time.Second
 
 	client := http.Client{}
-	retryableHTTPClient := web.NewRetryableHTTPClient(&client, backoffStrategy)
+	retryableHTTPClient := http2.NewRetryableHTTPClient(&client, backoffStrategy)
 
-	totalPages := 1
-	perPage := 3
+	totalPages := 10
+	perPage := 10
 	houses, _ := web.FetchHousesInfo(totalPages, perPage, retryableHTTPClient)
 
 	web.ProcessHouseImages(houses, retryableHTTPClient)
-
+	// TODO: add a finish message
 }

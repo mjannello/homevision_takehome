@@ -3,6 +3,7 @@ package web
 import (
 	"encoding/json"
 	"fmt"
+	http2 "homevision/pkg/http"
 	"io"
 	"net/http"
 	"os"
@@ -12,6 +13,8 @@ import (
 )
 
 const homevisionURL = "http://app-homevision-staging.herokuapp.com/api_project/houses"
+
+// TODO: create a model.go to include model structs
 
 type House struct {
 	ID        int    `json:"id"`
@@ -33,11 +36,11 @@ type Image struct {
 	Name    string
 }
 
-func FetchHousesInfo(totalPages, perPage int, httpClient RetryableHTTPClient) ([]House, error) {
+func FetchHousesInfo(totalPages, perPage int, httpClient http2.RetryableHTTPClient) ([]House, error) {
 	var housesList []House
 	var wg sync.WaitGroup
 	responsesChan := make(chan *http.Response, totalPages)
-
+	// TODO: Add an errChan to catch possible errors
 	for i := 1; i <= totalPages; i++ {
 		wg.Add(1)
 		go func(page int) {
@@ -82,7 +85,7 @@ func FetchHousesInfo(totalPages, perPage int, httpClient RetryableHTTPClient) ([
 	return housesList, nil
 }
 
-func DownloadImageContent(url string, client RetryableHTTPClient) (string, error) {
+func DownloadImageContent(url string, client http2.RetryableHTTPClient) (string, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request for image content: %v", err)
@@ -106,11 +109,10 @@ func DownloadImageContent(url string, client RetryableHTTPClient) (string, error
 	return string(content), nil
 }
 
-func ProcessHouseImages(houses []House, client RetryableHTTPClient) {
+func ProcessHouseImages(houses []House, client http2.RetryableHTTPClient) {
 	var wg sync.WaitGroup
 	imagesChan := make(chan Image, len(houses))
 
-	// Start goroutine for concurrent image processing
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -125,6 +127,7 @@ func ProcessHouseImages(houses []House, client RetryableHTTPClient) {
 
 			ext := filepath.Ext(image.Content)
 			fileName := fmt.Sprintf("%d-%s%s", image.ID, cleanFileName(image.Address), ext)
+			// TODO: add a custom filepath. Make it a param for the current method
 			filePath := filepath.Join(fileName)
 
 			err = os.WriteFile(filePath, []byte(content), 0644)
@@ -146,6 +149,7 @@ func ProcessHouseImages(houses []House, client RetryableHTTPClient) {
 }
 
 func cleanFileName(s string) string {
+	// TODO: use regex
 	result := strings.ReplaceAll(s, " ", "_")
 	result = strings.ReplaceAll(result, ",", "")
 	result = strings.ReplaceAll(result, ".", "")

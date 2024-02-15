@@ -1,4 +1,4 @@
-package web
+package http
 
 import (
 	"fmt"
@@ -17,11 +17,15 @@ type RetryableHTTPClient interface {
 }
 
 type retryableHTTPClient struct {
-	client      *http.Client
+	client      Client
 	backoffOpts BackoffOptions
 }
 
-func NewRetryableHTTPClient(client *http.Client, backoffOpts BackoffOptions) RetryableHTTPClient {
+type Client interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+func NewRetryableHTTPClient(client Client, backoffOpts BackoffOptions) RetryableHTTPClient {
 	return &retryableHTTPClient{
 		client:      client,
 		backoffOpts: backoffOpts,
